@@ -1,9 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const {MongoClient} = require("mongodb");
-const url = "mongodb://0.0.0.0:27017/mdm";
-const client = new MongoClient(url);
-const db_name = "mdm";
+const {dbConnectHardwareCPE, dbConnectSoftwareCPE, dbConnectCVE} = require("./mongo_connect.js");
 
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
@@ -12,10 +9,8 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.get("/cpe", async function(req, res) {
   try
   {
-    const result = await client.connect();
-    const db = result.db(db_name);
-    const collection1 = db.collection('hardwareCPE');
-    const collection2 = db.collection('softwareCPE');
+    const collection1 = await dbConnectHardwareCPE();
+    const collection2 = await dbConnectSoftwareCPE();
     const documents1 = await collection1.find().toArray();
     const documents2 = await collection2.find().toArray();
     const combinedData = {

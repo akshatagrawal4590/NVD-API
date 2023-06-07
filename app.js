@@ -91,9 +91,18 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
             })
           })
         });
+        const groupedCVEs = documents1.map(function(cpe) {
+          const cveGroup = matchingCVEs.filter(function(cve) {
+            return cve.configurations[0].nodes[0].cpeMatch.some(function(item) {
+              return item.criteria === cpe.cpeName;
+            })
+          });
+          return {cpeName: cpe.cpeName, matching_CVEs: cveGroup};
+        });
         res.json({
           hardware_CPEs: documents1,
-          matching_CVEs: matchingCVEs
+          matching_CVEs: matchingCVEs,
+          grouped_CVEs: groupedCVEs
         });
       }
       else
@@ -105,9 +114,18 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
             })
           })
         });
+        const groupedCVEs = documents2.map(function(cpe) {
+          const cveGroup = matchingCVEs.filter(function(cve) {
+            return cve.configurations[0].nodes[0].cpeMatch.some(function(item) {
+              return item.criteria === cpe.cpeName;
+            })
+          });
+          return {cpeName: cpe.cpeName, matching_CVEs: cveGroup};
+        });
         res.json({
           software_CPEs: documents2,
-          matching_CVEs: matchingCVEs
+          matching_CVEs: matchingCVEs,
+          grouped_CVEs: groupedCVEs
         });
       }
     }

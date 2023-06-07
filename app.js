@@ -84,9 +84,13 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
 
       if(cpeType == "h")
       {
-        // documents1 = documents1.filter(function(item) {
-        //   if(item)
-        // });
+        documents1 = documents1.filter(function(item) {
+          return matchingCVEs.some(function(cveItem) {
+            return cveItem.configurations[0].nodes[0].cpeMatch.some(function(element) {
+              return element.criteria === item.cpeName;
+            })
+          })
+        });
         res.json({
           hardware_CPEs: documents1,
           matching_CVEs: matchingCVEs
@@ -94,7 +98,13 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
       }
       else
       {
-
+        documents2 = documents2.filter(function(item) {
+          return matchingCVEs.some(function(cveItem) {
+            return cveItem.configurations[0].nodes[0].cpeMatch.some(function(element) {
+              return element.criteria === item.cpeName;
+            })
+          })
+        });
         res.json({
           software_CPEs: documents2,
           matching_CVEs: matchingCVEs

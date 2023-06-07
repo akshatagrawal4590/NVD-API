@@ -69,28 +69,24 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
     {
       let matchingCPEDesc = [];
       documents1.forEach(function(item) {
-        if(item.deprecated == true)
-        {
-          matchingCPEDesc.push(item.deprecatedBy[0].cpeName);
-        }
-        else
+        if(item.deprecated == false)
         {
           matchingCPEDesc.push(item.cpeName);
         }
       });
       documents2.forEach(function(item) {
-        if(item.deprecated == true)
-        {
-          matchingCPEDesc.push(item.deprecatedBy[0].cpeName);
-        }
-        else
+        if(item.deprecated == false)
         {
           matchingCPEDesc.push(item.cpeName);
         }
       });
       let matchingCVEs = await getCVE(matchingCPEDesc);
+
       if(cpeType == "h")
       {
+        // documents1 = documents1.filter(function(item) {
+        //   if(item)
+        // });
         res.json({
           hardware_CPEs: documents1,
           matching_CVEs: matchingCVEs
@@ -98,6 +94,7 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
       }
       else
       {
+
         res.json({
           software_CPEs: documents2,
           matching_CVEs: matchingCVEs

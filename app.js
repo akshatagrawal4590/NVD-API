@@ -5,12 +5,13 @@ const {dbConnectHardwareCPE, dbConnectSoftwareCPE, dbConnectCVE} = require("./mo
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 
-app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res) {
+app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?/:sortByDate?", async function(req, res) {
   try
   {
+    const sortByDate = req.query.sortByDate;
     const cpeType = req.params.type;
-    const cpeVendor = req.params.cpeVendor;
-    const cpeVersion = req.params.cpeVersion;
+    const cpeVendor = req.query.cpeVendor;
+    const cpeVersion = req.query.cpeVersion;
     const cpeName = req.params.cpeName;
     const collection1 = await dbConnectHardwareCPE();
     const collection2 = await dbConnectSoftwareCPE();
@@ -99,10 +100,27 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
           });
           return {cpeName: cpe.cpeName, matching_CVEs: cveGroup};
         });
+        let sortedGroupedCVEs = [];
+        if(sortByDate === "1")
+        {
+          sortedGroupedCVEs = groupedCVEs.sort(function(a, b) {
+            const timeA = getLastModifiedTime(a.cpeName, documents1);
+            const timeB = getLastModifiedTime(b.cpeName, documents1);
+            return compareTime(timeA, timeB);
+          });
+        }
+        else
+        {
+          sortedGroupedCVEs = groupedCVEs.sort(function(a, b) {
+            const versionA = getVersionFromCPE(a.cpeName);
+            const versionB = getVersionFromCPE(b.cpeName);
+            return compareVersions(versionB, versionA);
+          });
+        }
         res.json({
           hardware_CPEs: documents1,
-          matching_CVEs: matchingCVEs,
-          grouped_CVEs: groupedCVEs
+          matching_CVEs: groupedCVEs,
+          sorted_CVEs: sortedGroupedCVEs
         });
       }
       else
@@ -122,21 +140,95 @@ app.get("/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?", async function(req, res)
           });
           return {cpeName: cpe.cpeName, matching_CVEs: cveGroup};
         });
+        let sortedGroupedCVEs = [];
+        if(sortByDate === "1")
+        {
+          sortedGroupedCVEs = groupedCVEs.sort(function(a, b) {
+            const timeA = getLastModifiedTime(a.cpeName, documents2);
+            const timeB = getLastModifiedTime(b.cpeName, documents2);
+            return compareTime(timeA, timeB);
+          });
+        }
+        else
+        {
+          sortedGroupedCVEs = groupedCVEs.sort(function(a, b) {
+            const versionA = getVersionFromCPE(a.cpeName);
+            const versionB = getVersionFromCPE(b.cpeName);
+            return compareVersions(versionB, versionA);
+          });
+        }
         res.json({
           software_CPEs: documents2,
-          matching_CVEs: matchingCVEs,
-          grouped_CVEs: groupedCVEs
+          matching_CVEs: groupedCVEs,
+          sorted_CVEs: sortedGroupedCVEs
         });
       }
     }
   }
   catch(error)
   {
-    res.write("Error in '/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?' route.");
+    res.write("Error in '/cpe/:type/:cpeName/:cpeVendor?/:cpeVersion?/:sortByDate?' route.");
     res.write(error);
     res.end();
   }
 });
+
+function compareTime(timeA, timeB)
+{
+  const dateA = new Date(timeA);
+  const dateB = new Date(timeB);
+  if(dateA > dateB)
+  {
+    return -1;
+  }
+  else if(dateA < dateB)
+  {
+    return 1;
+  }
+  return 0;
+}
+
+function getLastModifiedTime(name, documents)
+{
+  for (const cpe of documents) {
+    if (name === cpe.cpeName) {
+      return cpe.lastModified;
+    }
+  }
+  return null;
+}
+
+function getVersionFromCPE(cpeName)
+{
+  const version = cpeName.split(":")[5];
+  if(version === "*")
+  {
+    return "0";
+  }
+  return version;
+}
+
+function compareVersions(versionA, versionB)
+{
+  const partsA = versionA.split('.').map(Number);
+  const partsB = versionB.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++)
+  {
+    const partA = partsA[i] !== undefined ? partsA[i] : 0;
+    const partB = partsB[i] !== undefined ? partsB[i] : 0;
+
+    if (partA > partB)
+    {
+      return 1;
+    }
+    else if (partA < partB)
+    {
+      return -1;
+    }
+  }
+  return 0;
+}
 
 async function getCVE(matchingCPEDesc)
 {
@@ -149,3 +241,7 @@ async function getCVE(matchingCPEDesc)
 app.listen(process.env.PORT_NO, function() {
   console.log("Server started.");
 });
+
+
+// "fix:#issue_no commit msg"
+// "feat:#"

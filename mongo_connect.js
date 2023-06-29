@@ -8,7 +8,7 @@ const result = client.connect();
 result.then(function(res) {
   db = res.db(db_name);
 }).catch(function(error) {
-  console.log(console.log(error));
+  console.log(error);
 });
 
 const dbConnectHardwareCPE = function() {
@@ -23,8 +23,13 @@ const dbConnectCVE = function() {
   return db.collection(process.env.COLLECTION3);
 };
 
+const createNewCollection = async function(collectionName) {
+  return newCollection = await db.createCollection(process.env.NEW_COLLECTION);
+};
+
 module.exports = {
   dbConnectHardwareCPE: dbConnectHardwareCPE,
   dbConnectSoftwareCPE: dbConnectSoftwareCPE,
-  dbConnectCVE: dbConnectCVE
+  dbConnectCVE: dbConnectCVE,
+  createNewCollection: createNewCollection
 }
